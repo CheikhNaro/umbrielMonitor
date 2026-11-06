@@ -2,6 +2,10 @@
 
 A visual monitor manager for [Umbriel](https://github.com/noctalia-dev/umbriel) + [Noctalia](https://github.com/noctalia-dev/noctalia).
 
+
+https://github.com/user-attachments/assets/9716865e-9f09-4c37-9509-d4a1aad56605
+
+
 ---
 
 ## What it does

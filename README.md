@@ -1,6 +1,6 @@
 # umbriel-monitor-gui
 
-A visual monitor manager for [Umbriel](https://github.com/noctalia-dev/umbriel) + [Noctalia](https://github.com/noctalia-dev/noctalia).
+A visual monitor manager for [Umbriel](https://github.com/noctalia-dev/umbriel) + [Noctalia](https://github.com/noctalia-dev/noctalia), with partial support for [Hyprland](https://hyprland.org).
 
 
 https://github.com/user-attachments/assets/9716865e-9f09-4c37-9509-d4a1aad56605
@@ -118,3 +118,46 @@ noctalia & disown
 ```
 
 **This GUI is intended for monitor positioning only** (arrangement, mode, rotation, enable/disable). Leave all scale values as-is.
+
+---
+
+## Hyprland
+
+> [!NOTE]
+> The GUI itself requires Umbriel (`umbriel outputs --json`, `umbriel msg output-enable/disable`).  
+> On Hyprland, these two calls must be replaced; everything else (`wlr-randr`, the JSON layout file) works as-is since Hyprland is a wlroots compositor.
+
+### Adapt the GUI for Hyprland
+
+Replace the two Umbriel-specific calls in `umbriel_monitor_gui.py`:
+
+| Original (Umbriel) | Hyprland equivalent |
+|--------------------|---------------------|
+| `umbriel outputs --json` | `hyprctl monitors -j` |
+| `umbriel msg output-enable <name>` | `wlr-randr --output <name> --on` |
+| `umbriel msg output-disable <name>` | `wlr-randr --output <name> --off` |
+
+> [!IMPORTANT]
+> `hyprctl monitors -j` returns a different JSON schema than `umbriel outputs --json`.  
+> You will also need to adapt `_load_monitors()` to map Hyprland's field names (`width`, `height`, `refreshRate`, `x`, `y`, `scale`, `transform`, `disabled`).
+
+### Adapt `apply-layout.sh` for Hyprland
+
+Replace the Umbriel-specific lines:
+
+```bash
+# Instead of: umbriel outputs --json > /dev/null 2>&1 || exit 0
+hyprctl monitors -j > /dev/null 2>&1 || exit 0
+
+# Instead of: umbriel msg output-enable "$name"
+wlr-randr --output "$name" --on
+
+# Instead of: umbriel msg output-disable "$name"
+wlr-randr --output "$name" --off
+```
+
+Add `apply-layout.sh` to your Hyprland autostart (`hyprland.conf` or equivalent):
+
+```
+exec-once = ~/.config/umbriel/scripts/apply-layout.sh
+```

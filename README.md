@@ -54,19 +54,57 @@ sudo pacman -S python-gobject python-cairo wlr-randr jq
 
 ---
 
-## Installation
+## Installation — Umbriel + Noctalia
 
 ```bash
-# 1. Copy the scripts
 mkdir -p ~/.config/umbriel/scripts ~/.config/umbriel/state
 cp umbriel_monitor_gui.py  ~/.config/umbriel/scripts/
 cp apply-layout.sh         ~/.config/umbriel/scripts/
 chmod +x ~/.config/umbriel/scripts/umbriel_monitor_gui.py
 chmod +x ~/.config/umbriel/scripts/apply-layout.sh
+```
 
-# 2. Auto-apply layout at session start — add to your Umbriel autostart
-#    In ~/.config/umbriel/config.toml:
-#    spawn ~/.config/umbriel/scripts/apply-layout.sh
+Add to your Umbriel autostart in `~/.config/umbriel/config.toml`:
+
+```toml
+spawn ~/.config/umbriel/scripts/apply-layout.sh
+```
+
+---
+
+## Installation — Hyprland
+
+> [!NOTE]
+> The GUI calls `umbriel outputs --json` and `umbriel msg output-enable/disable` — these must be replaced. The layout file and `wlr-randr` work as-is on any wlroots compositor.
+
+**Adapt `umbriel_monitor_gui.py`** — replace the Umbriel-specific calls:
+
+| Original (Umbriel) | Hyprland equivalent |
+|--------------------|---------------------|
+| `umbriel outputs --json` | `hyprctl monitors -j` |
+| `umbriel msg output-enable <name>` | `wlr-randr --output <name> --on` |
+| `umbriel msg output-disable <name>` | `wlr-randr --output <name> --off` |
+
+> [!IMPORTANT]
+> `hyprctl monitors -j` has a different JSON schema. You will also need to adapt `_load_monitors()` to map Hyprland field names (`width`, `height`, `refreshRate`, `x`, `y`, `scale`, `transform`, `disabled`).
+
+**Adapt `apply-layout.sh`** — replace:
+
+```bash
+# Instead of: umbriel outputs --json > /dev/null 2>&1 || exit 0
+hyprctl monitors -j > /dev/null 2>&1 || exit 0
+
+# Instead of: umbriel msg output-enable "$name"
+wlr-randr --output "$name" --on
+
+# Instead of: umbriel msg output-disable "$name"
+wlr-randr --output "$name" --off
+```
+
+Add to your Hyprland autostart:
+
+```
+exec-once = ~/.config/umbriel/scripts/apply-layout.sh
 ```
 
 ---
@@ -77,12 +115,18 @@ chmod +x ~/.config/umbriel/scripts/apply-layout.sh
 python3 ~/.config/umbriel/scripts/umbriel_monitor_gui.py
 ```
 
-Or bind it to a key in `~/.config/umbriel/config.toml`:
+**Umbriel** — bind it to a key in `~/.config/umbriel/config.toml`:
 
 ```toml
 [[keybind]]
 key = "Super+shift+m"
 action = "spawn python3 ~/.config/umbriel/scripts/umbriel_monitor_gui.py"
+```
+
+**Hyprland** — bind it in your Hyprland config:
+
+```
+bind = SUPER SHIFT, M, exec, python3 ~/.config/umbriel/scripts/umbriel_monitor_gui.py
 ```
 
 **Workflow:**
@@ -118,46 +162,3 @@ noctalia & disown
 ```
 
 **This GUI is intended for monitor positioning only** (arrangement, mode, rotation, enable/disable). Leave all scale values as-is.
-
----
-
-## Hyprland
-
-> [!NOTE]
-> The GUI itself requires Umbriel (`umbriel outputs --json`, `umbriel msg output-enable/disable`).  
-> On Hyprland, these two calls must be replaced; everything else (`wlr-randr`, the JSON layout file) works as-is since Hyprland is a wlroots compositor.
-
-### Adapt the GUI for Hyprland
-
-Replace the two Umbriel-specific calls in `umbriel_monitor_gui.py`:
-
-| Original (Umbriel) | Hyprland equivalent |
-|--------------------|---------------------|
-| `umbriel outputs --json` | `hyprctl monitors -j` |
-| `umbriel msg output-enable <name>` | `wlr-randr --output <name> --on` |
-| `umbriel msg output-disable <name>` | `wlr-randr --output <name> --off` |
-
-> [!IMPORTANT]
-> `hyprctl monitors -j` returns a different JSON schema than `umbriel outputs --json`.  
-> You will also need to adapt `_load_monitors()` to map Hyprland's field names (`width`, `height`, `refreshRate`, `x`, `y`, `scale`, `transform`, `disabled`).
-
-### Adapt `apply-layout.sh` for Hyprland
-
-Replace the Umbriel-specific lines:
-
-```bash
-# Instead of: umbriel outputs --json > /dev/null 2>&1 || exit 0
-hyprctl monitors -j > /dev/null 2>&1 || exit 0
-
-# Instead of: umbriel msg output-enable "$name"
-wlr-randr --output "$name" --on
-
-# Instead of: umbriel msg output-disable "$name"
-wlr-randr --output "$name" --off
-```
-
-Add `apply-layout.sh` to your Hyprland autostart (`hyprland.conf` or equivalent):
-
-```
-exec-once = ~/.config/umbriel/scripts/apply-layout.sh
-```

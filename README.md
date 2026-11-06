@@ -98,3 +98,19 @@ action = "spawn python3 ~/.config/umbriel/scripts/umbriel_monitor_gui.py"
 | `apply-layout.sh` | Session startup script — re-applies `monitor-layout.json` via `wlr-randr` |
 | `~/.config/umbriel/state/monitor-layout.json` | Persisted layout (written by the GUI, read by `apply-layout.sh`) |
 | `~/.config/umbriel/state/monitor-mode` | Current mode flag (`extended` / `mirror` / `single`) |
+
+---
+
+## ⚠ Known limitation — do not change scale
+
+**Do not modify the scale of any output in this GUI.**
+
+Changing the scale triggers an Umbriel output teardown/recreate cycle that causes Noctalia to crash (negative viewport size — upstream Umbriel bug, fix pending).
+
+If Noctalia stops after an accidental scale change, restart it manually:
+
+```bash
+noctalia & disown
+```
+
+**This GUI is intended for monitor positioning only** (arrangement, mode, rotation, enable/disable). Leave all scale values as-is.
